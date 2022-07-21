@@ -26,10 +26,10 @@ app = DDRPortSetup(
    controller_refdes="U2A5",
    dram_refdes=["U1A1", "U1B5"],
    dram_type="ddr3_x8",
-   save_edb_as_fname=r"result_project\Galileo_new.aedb"
+   save_edb_as_fname=r"Galileo_new.aedb"
    )
 ```
-Configured design is save in result_project folder.
+Configured design is saved as Galileo_new.aedb.
 
 Import it into SIwave
 
