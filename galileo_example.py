@@ -3,7 +3,6 @@ import shutil
 import tempfile
 from pyaedt import generate_unique_name, examples
 
-
 if "PYCHARM_HOSTED" in os.environ:
     from utils.ddr_port_setup import DDRPortSetup
 else:
@@ -27,7 +26,6 @@ shutil.copytree(example_path[:-8], targetfolder)
 targetfile = os.path.join(targetfolder)
 
 print(targetfile)
-
 
 ###############################################################################
 

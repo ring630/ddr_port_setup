@@ -9,4 +9,14 @@ DDR DRAM pinout is defined by JEDEC. Standard Pinout can be used to place ports 
 The user only need to tell the refdes of controller and DDR DRAMs, and specify DRAM type (for example, ddr3_x8). The
 script places ports on controller and DRAMs automatically.
 ## How to use
- 
+```
+app = DDRPortSetup(
+   edb_fpath="Galileo.aedb",
+   controller_refdes="U2A5",
+   dram_refdes=["U1A1", "U1B5"],
+   dram_type="ddr3_x8",
+   save_edb_as_fname=r"result_project\Galileo_new.aedb"
+   )
+```
+Configured design is save in result_project folder.
+Import it into SIwave
