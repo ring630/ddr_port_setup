@@ -15,6 +15,12 @@ Currently, the supported DRAM types are
 
 2, DDR5 x16
 ## How to use
+1, Downlaod and unzip released version.
+
+2, Open gelileo_exmaple.py in IDE. For example, Pycharm or Spyder.
+
+3, Modify methon input variables accordingly. Below is an example.
+
 Board Galileo.aedb
 
 controller U2A5
@@ -34,3 +40,4 @@ Configured design is saved as Galileo_new.aedb.
 Import it into SIwave
 
 <img width="1072" alt="image" src="https://user-images.githubusercontent.com/27995305/180188430-b28e30e8-fbb1-4cce-831e-97e30c8e4d4f.png">
+
