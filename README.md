@@ -8,6 +8,12 @@ DDR DRAM pinout is defined by JEDEC. Standard Pinout can be used to place ports 
 ## What does this script do
 The user only need to tell the refdes of controller and DDR DRAMs, and specify DRAM type (for example, ddr3_x8). The
 script places ports on controller and DRAMs automatically.
+
+Currently, the supported DRAM types are
+
+1, DDR3 x8
+
+2, DDR5 x16
 ## How to use
 Board Galileo.aedb
 
