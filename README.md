@@ -1,11 +1,13 @@
-# Introduction
-## Problem
+# 1 Quick Start
+[How to run python script in spyder](docs/HOW_TO_RUN_PYAEDT_IN_SPYDER.md)
+# 2 Introduction
+## 2.1 Problem
 A DDR DRAM interface can have dozens of signals. In SIwave native environment, port setup relies on net name which can 
 be from design to design. It is trivial to setup SYZ extraction for DDR application. 
 of ports. 
-## Solution
+## 2.2 Solution
 DDR DRAM pinout is defined by JEDEC. Standard Pinout can be used to place ports without the knowledge of net names.
-## What does this script do
+## 2.3 What does this script do
 The user only need to tell the refdes of controller and DDR DRAMs, and specify DRAM type (for example, ddr3_x8). The
 script places ports on controller and DRAMs automatically.
 
@@ -14,7 +16,7 @@ Currently, the supported DRAM types are
 1, DDR3 x8
 
 2, DDR5 x16
-## How to use
+## 2.4 How to use
 1, Downlaod and unzip released version.
 
 2, Open gelileo_exmaple.py in IDE. For example, Pycharm or Spyder.

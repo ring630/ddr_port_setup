@@ -1,6 +1,9 @@
+import csv
 import os
 import json
+import pandas as pd
 from pyaedt import Edb
+
 
 def correct_port_name(name):
     target = ["$", "<", ">"]
@@ -34,63 +37,86 @@ class DDRPortSetup:
 
         ###############################################################################################
         # Find ports on DRAMs
-        dq_group_name = ["dq", "ldq", "udq"]
-        dqs_group_name = ["dqs", "ldqs", "udqs"]
+        dq_group_name = ["DQ", "DQ_0", "DQ_1"]
+        dqs_group_name = ["DQS", "DQS_0", "DQS_1"]
 
         controller_net_list = []  # jedec_sname net_name
         port_list = []  # refdes pin_name net_name port_name
         port_index = 0
         first_dram = True
+        dq_signal_index = 0
+        dqs_t_signal_index = 0
+        dqs_c_signal_index = 0
         for refdes in dram_refdes:
             comp = self.edbapp.core_components.components[refdes]
 
             # clock signals
-            for jedec_sname, pin_name in data["ck"].items():
+            signal_type = "CK"
+            signal_index = 0
+            for jedec_sname, pin_name in data[signal_type].items():
                 net_name = comp.pins[pin_name].net_name
-                port_name = "{}_{}_{}_{}".format(port_index, refdes, jedec_sname, net_name)
-                port_list.append([refdes, pin_name, net_name, port_name])
+                port_name = "{}_{}_{}".format(refdes, pin_name, net_name)
+                port_list.append([refdes, pin_name, jedec_sname, signal_index, net_name, port_name])
                 if first_dram:
-                    controller_net_list.append([jedec_sname, net_name])
-                port_index = port_index + 1
+                    controller_net_list.append([signal_type, signal_index, net_name])
+                    port_index = port_index + 1
 
             # Command and address signals
-            for jedec_sname, pin_name in data["ca"].items():
+            signal_type = "CA"
+            signal_index_prefix = signal_type+"_"
+            signal_index = 0
+            for jedec_sname, pin_name in data[signal_type].items():
                 net_name = comp.pins[pin_name].net_name
-                port_name = "{}_{}_{}_{}".format(port_index, refdes, jedec_sname, net_name)
-                port_list.append([refdes, pin_name, net_name, port_name])
+                port_name = "{}_{}_{}".format(refdes, pin_name, net_name)
+                signal_type = signal_type.split("_")[0]
+                port_list.append([refdes, pin_name, signal_type, signal_index, net_name, port_name])
                 if first_dram:
-                    controller_net_list.append([jedec_sname, net_name])
-                port_index = port_index + 1
+                    controller_net_list.append([signal_type, signal_index, net_name])
+                    port_index = port_index + 1
+                signal_index = signal_index + 1
 
             # data signals
             for name in dq_group_name:
                 if name in data:
-                    for jedec_sname, pin_name in data[name].items():
+                    signal_type = name
+                    for jedec_sname, pin_name in data[signal_type].items():
                         net_name = comp.pins[pin_name].net_name
                         if net_name == "DUMMY":
                             continue
-                        port_name = "{}_{}_{}_{}".format(port_index, refdes, jedec_sname, net_name)
-                        port_list.append([refdes, pin_name, net_name, port_name])
-                        controller_net_list.append([jedec_sname, net_name])
+                        port_name = "{}_{}_{}".format(refdes, pin_name, net_name)
+                        signal_type = signal_type.split("_")[0]
+                        port_list.append([refdes, pin_name, signal_type, dq_signal_index, net_name, port_name])
+                        controller_net_list.append([signal_type, dq_signal_index, net_name])
                         port_index = port_index + 1
+                        dq_signal_index = dq_signal_index + 1
 
             # Data stroke signals
             for name in dqs_group_name:
                 if name in data:
-                    for jedec_sname, pin_name in data[name].items():
+                    signal_type = name
+                    t_flag = True
+                    for jedec_sname, pin_name in data[signal_type].items():
                         net_name = comp.pins[pin_name].net_name
                         if net_name == "DUMMY":
                             continue
-                        port_name = "{}_{}_{}_{}".format(port_index, refdes, jedec_sname, net_name)
-                        port_list.append([refdes, pin_name, net_name, port_name])
-                        controller_net_list.append([jedec_sname, net_name])
+                        port_name = "{}_{}_{}".format(refdes, pin_name, net_name)
+                        if t_flag:
+                            signal_index = dqs_t_signal_index
+                            dqs_t_signal_index = dqs_t_signal_index + 1
+                            t_flag = False
+                        else:
+                            signal_index = dqs_c_signal_index
+                            dqs_c_signal_index = dqs_c_signal_index + 1
+                        port_list.append([refdes, pin_name, jedec_sname, signal_index, net_name, port_name])
+                        controller_net_list.append([jedec_sname, signal_index, net_name])
                         port_index = port_index + 1
 
             first_dram = False
 
         # Fine port on controller
-        for jedec_sname, net_name in controller_net_list:
-            comp = self.edbapp.core_components.components[controller_refdes]
+        refdes = controller_refdes
+        for signal_type, signal_index, net_name in controller_net_list:
+            comp = self.edbapp.core_components.components[refdes]
 
             pin_name = ""
             for _pin_name, obj in comp.pins.items():
@@ -103,14 +129,15 @@ class DDRPortSetup:
             if not pin_name:
                 print("warning", net_name)
                 break
-            port_name = "{}_{}_{}_{}".format(port_index, controller_refdes, jedec_sname, net_name)
-            port_list.append([controller_refdes, pin_name, net_name, port_name])
+            port_name = "{}_{}_{}".format(refdes, pin_name, net_name)
+            port_list.append([refdes, pin_name, signal_type, signal_index, net_name, port_name])
             port_index = port_index + 1
 
         ###############################################################################################
         # Place ports
-        for refdes, pin_name, net_name, port_name in port_list:
-            print(refdes, pin_name, net_name, port_name)
+
+        for refdes, pin_name, signal_type, signal_index, net_name, port_name in port_list:
+            print(port_name)
             port_name = correct_port_name(port_name)
             self.edbapp.core_siwave.create_circuit_port_on_net(refdes, net_name, refdes, self.GND_NET_NAME,
                                                                port_name=port_name)
@@ -122,3 +149,15 @@ class DDRPortSetup:
 
         self.edbapp.save_edb_as(save_edb_as_fname)
         self.edbapp.close_edb()
+
+        ###############################################################################################
+        # Save port config to .csv file
+        header = ["refdes", "pin_name", "signal_type", "signal_index", "net_name", "port_name"]
+        save_port_cfg_as_fname = save_edb_as_fname.replace(".aedb", ".csv")
+        with open(save_port_cfg_as_fname, "w", newline="") as f:
+            writer = csv.writer((f))
+            writer.writerow(header)
+            writer.writerows(port_list)
+
+
+
