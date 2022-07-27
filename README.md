@@ -29,7 +29,7 @@ Board Galileo.aedb
 controller U2A5
 
 DRAM U1A1 U1B5
-```
+```python
 app = DDRPortSetup(
    edb_fpath="Galileo.aedb",
    controller_refdes="U2A5",
