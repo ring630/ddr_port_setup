@@ -1,5 +1,6 @@
 # 1 Quick Start
 [How to run python script in spyder](https://github.com/ring630/Material_Characterization/blob/main/docs/HOW_TO_RUN_PYAEDT_IN_SPYDER.md)
+
 # 2 Introduction
 ## 2.1 Problem
 A DDR DRAM interface can have dozens of signals. In SIwave native environment, port setup relies on net name which can 
@@ -21,7 +22,7 @@ Currently, the supported DRAM types are
 
 2, Open gelileo_exmaple.py in IDE. For example, Pycharm or Spyder.
 
-3, Modify methon input variables accordingly. Below is an example.
+3, Modify method input variables accordingly. Below is an example.
 
 Board Galileo.aedb
 
