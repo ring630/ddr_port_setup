@@ -1,5 +1,5 @@
 # 1 Quick Start
-[How to run python script in spyder](docs/HOW_TO_RUN_PYAEDT_IN_SPYDER.md)
+[How to run python script in spyder](https://github.com/ring630/Material_Characterization/blob/main/docs/HOW_TO_RUN_PYAEDT_IN_SPYDER.md)
 # 2 Introduction
 ## 2.1 Problem
 A DDR DRAM interface can have dozens of signals. In SIwave native environment, port setup relies on net name which can 
