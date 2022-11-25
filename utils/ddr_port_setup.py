@@ -1,8 +1,19 @@
 import csv
 import os
 import json
+import time
 import pandas as pd
 from pyaedt import Edb
+
+
+class CountTime:
+    def __init__(self):
+        self.now = time.time()
+
+    def count_time(self, text):
+        new_time = time.time()
+        print("-- {} --> {}".format(text, new_time - self.now))
+        self.now = new_time
 
 
 def correct_port_name(name):
@@ -13,25 +24,30 @@ def correct_port_name(name):
 
 
 class DDRPortSetup:
-    EDB_VERSION = "2022.2"
+
     GND_NET_NAME = "GND"
     DRAM_TYPE_LIST = {"ddr5_x16": "ddr5_x16.json",
+                      "ddr4_x16": "ddr4_x16.json",
                       "ddr3_x8": "ddr3_x8.json"}
 
-    def __init__(self,
-                 edb_fpath,
-                 controller_refdes,
-                 dram_refdes,
-                 dram_type,
-                 ):
+    def __init__(self, edb_fpath, edb_version="2022.2"):
+        self.my_timer = CountTime()
+        self.edb_name = os.path.basename(edb_fpath)
+        self.edbapp = Edb(edbpath=edb_fpath, edbversion=edb_version)
+        self.my_timer.count_time("load edb")
+        self.my_timer.count_time("primitives -> {}".format(len(self.edbapp.core_primitives.primitives)))
+        self.my_timer.count_time("padstack_instances -> {}".format(len(self.edbapp.core_padstack.padstack_instances)))
+        self.my_timer.count_time("nets -> {}".format(len(self.edbapp.core_nets.nets)))
+        self.my_timer.count_time("layer count -> {}".format(len(self.edbapp.stackup.signal_layers)))
+        self.my_timer.count_time("components -> {}".format(len(self.edbapp.core_components.components)))
+
+    def setup_ports(self, controller_refdes, dram_refdes, dram_type, do_cutout=True):
 
         if not isinstance(dram_refdes, list):
             dram_refdes = [dram_refdes]
 
         with open(os.path.join("_ddrx_pin_mapping", self.DRAM_TYPE_LIST[dram_type]), encoding="utf-8") as f:
             data = json.load(f)
-
-        self.edbapp = Edb(edbpath=edb_fpath, edbversion=self.EDB_VERSION)
 
         ###############################################################################################
         # Find ports on DRAMs
@@ -61,7 +77,7 @@ class DDRPortSetup:
 
             # Command and address signals
             signal_type = "CA"
-            signal_index_prefix = signal_type+"_"
+            signal_index_prefix = signal_type + "_"
             signal_index = 0
             for jedec_sname, pin_name in data[signal_type].items():
                 net_name = comp.pins[pin_name].net_name
@@ -134,12 +150,27 @@ class DDRPortSetup:
         ###############################################################################################
         # Place ports
 
-        for refdes, pin_name, signal_type, signal_index, net_name, port_name in self.port_list:
+        for refdes, pin_number, signal_type, signal_index, net_name, port_name in self.port_list:
             print(port_name)
             port_name = correct_port_name(port_name)
-            self.edbapp.core_siwave.create_circuit_port_on_net(refdes, net_name, refdes, self.GND_NET_NAME,
-                                                               port_name=port_name)
 
+            #pg_name, _ = self.edbapp.core_siwave.create_pin_group(refdes, pin_number, "{}_{}".format(refdes, pin_name))
+            #self.edbapp.core_siwave.create_circuit_port_on_net(refdes, net_name, refdes, self.GND_NET_NAME,
+            #                                                   port_name=port_name)
+        self.my_timer.count_time("setup ports")
+        if do_cutout:
+            self.cutout(controller_net_list)
+
+    def cutout(self, net_list):
+            ###############################################################################################
+            # Cutout
+            temp = [i[2] for i in net_list]
+            #self.edbapp.create_cutout_multithread(signal_list=temp, extent_type="ConvexHull", use_pyaedt_extent_computing=True)
+            self.edbapp.create_cutout_multithread(signal_list=temp, extent_type="ConvexHull", use_pyaedt_extent_computing=False)
+            #self.edbapp.create_cutout(temp, extent_type="ConvexHull")
+
+            self.my_timer.count_time("cut out")
+            self.my_timer.count_time("ddr nets -> {}".format(len(temp)))
 
     def save_edb_as(self, fpath_edb):
         ###############################################################################################
@@ -156,3 +187,8 @@ class DDRPortSetup:
             writer = csv.writer((f))
             writer.writerow(header)
             writer.writerows(self.port_list)
+
+    def save_edb_to_temp_folder(self):
+        temp_folder = r"C:\Users\hzhou\AppData\Roaming\JetBrains\PyCharmCE2022.1\scratches\temp_files"
+        self.edbapp.save_edb_as(os.path.join(temp_folder, self.edb_name))
+        self.edbapp.close_edb()
